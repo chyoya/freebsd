@@ -54,11 +54,7 @@ portsnap fetch/extract
 为后只需要运行portsnap fetch update(为升级ports tree）
 <2>为系统打补丁升级
 freebsd-update fetch/install
-<3>在/etc/make.conf中加入（为ports安装加速）
-MASTER_SITE_OVERRIDE=\
-ftp://ftp.freebsdchina.org/pub/FreeBSD/ports/distfiles/${DIST_SUBDIR}\
-ftp://ftp.tw.freebsd.org/pub/FreeBSD/ports/distfiles/${DIST_SUBDIR}
-<3>
+
 安装portmaster
 alias update-apps 'portmaster -a --force-config'
 alias show-dep 'portmaster --show-work ./ | sort'
