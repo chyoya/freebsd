@@ -1,0 +1,322 @@
+#安装slim
+xfce开机启动
+
+#xorg配置
+运行Xorg -configure
+mv ~/xorg.conf.new /etc/X11/xorg.conf
+
+
+#编译安装
+cd /usr/ports/----
+make install clean
+上面的步骤可分为3步
+make
+make install
+make clean
+但半路停止是可使用make clean清理
+#加快portsnap速度
+vi /etc/portsnap.conf
+更改为SERVERNAME=portsnap.cn.FreeBSD.org
+
+# 安装pkg
+<1> portsnap fetch update
+ cd /usr/ports/ports-mgmt/pkg
+ make
+ make install clean
+<2>
+/usr/sbin/pkg
+<3>
+pkg_add -r pkg
+
+#pkg源
+<1>ee /etc/pkg/FreeBSD.conf改一下
+可在http://pkg.freebsd.org/上查到最新的网址（相对的版本）
+如http://pkg0.twn.freebsd.org/freebsd:10:x86:64/latest对应的
+
+    FreeBSD: {
+          url: "pkg+http://pkg0.twn.freebsd.org/${ABI}/latest",
+          mirror_type: "srv",
+          signature_type: "fingerprints",
+          fingerprints: "/usr/share/keys/pkg",
+          enabled: yes
+        }
+
+
+
+方法三
+
+#freebsd初始化安装
+<1>方法1.portsnap fetch -s portsnap.cn.freebsd.org(首次下载）
+portsnap extract
+方法2.ee /etc/prtsnap.conf（为portsnap加速）
+改为SERVERNAME=portsnap.cn.freebsd.org
+portsnap fetch/extract
+为后只需要运行portsnap fetch update(为升级ports tree）
+<2>为系统打补丁升级
+freebsd-update fetch/install
+<3>在/etc/make.conf中加入（为ports安装加速）
+MASTER_SITE_OVERRIDE=\
+ftp://ftp.freebsdchina.org/pub/FreeBSD/ports/distfiles/${DIST_SUBDIR}\
+ftp://ftp.tw.freebsd.org/pub/FreeBSD/ports/distfiles/${DIST_SUBDIR}
+<3>
+安装portmaster
+alias update-apps 'portmaster -a --force-config'
+alias show-dep 'portmaster --show-work ./ | sort'
+ 前者用来更新所有ports，并强制make config。
+后者用来显示该软件的依赖，按已装和未装排序，需要事先进入那个软件的目录才能执行。
+因为 portmaster 不会读取 /etc/make.conf 里的 BATCH=yes 设置，如果你讨厌烦人的 make config，可以：
+
+portmaster -aG  #更新所有ports，并防止 make config
+
+portmaster的配置文件位于/usr/local/etc/portmaster.rc，需要手工创建。
+可以参考同目录下的portmaster.rc.sample。
+我使用的设置是：
+
+ALWAYS_SCRUB_DISTFILES=dopt     #更新完一个ports后自动删除旧版本的源码压缩包
+PM_LOG=/var/log/portmaster.log  #日志
+<4>
+freebsd清理工具
+1.pkg_rmleaves
+这个工具可以用来删除用不着的软件，其作用相当于Gentoo的emerge –depclean，或者Debian的orphaner（deborphan这个包）
+它首先列出所有不被其他软件所依赖的“叶子节点”，或者说“孤立的软件包”（这意味着删除它们不会影响依赖关系）。
+然后你可以手动指定哪些软件是你不需要的，
+选中执行[OK]后，它会进一步筛选“叶子节点”。
+如此递归之后，它可以保证该软件及其（不被其他软件依赖的）依赖被彻底清除。
+2.pkg_clenup
+这个工具的作用和pkg_rmleaves完全一样，其工作原理也一致，不用担心两者冲突或者哪个剔除起来更彻底。
+唯一的区别在于，这个软件能充分利用你的显示屏=)，另外能在上方显示出每个软件的描述，
+比如上图中，光标停在了amarok这一行，它的上面就显示出amarok的介绍：“Media Player for KDE4”。
+<5>pkg安装
+cd /usr/local/sbin/pkg make install clean
+
+#将root下shell改为bash
+1.cd /usr/ports/shells/bash make install clean
+
+2.echo “/bin/bash”>> /etc/shell
+
+3.cd /bin && ln -s /usr/local/bin/bash /bin/bash
+
+4.chsh -s /bin/bash root
+
+#将fcitx与scim搭配达到好的效果
+先期准备1.安装scim 配置2.配置/etc/log.conf 加载
+3.配置/etc/csh.chsrc 
+
+1.pkg install zh-fcitx
+2.ee /etc/csh.chsrc
+setenv XMODIFIERS @im=fcitx
+setenv GTK_IM_MODULE fcitx
+setenv GTK3_IM_MODULE xim
+setenv LANG zh_CN.GB2312
+setenv LC_ALL zh_CN.GB2312
+setenv LC_CTYPE zh_CN.GB2312
+
+3.ee /home/cyy/.cshrc
+setenv LANG zh_CN.GB2312
+setenv LC_ALL zh_CN.GB2312
+setenv LC_CTYPE zh_CN.GB2312
+
+(me:\  
+        :lang=zh_CN.GB2312:\
+        :LC_ALL=zh_CN.GB2312:\
+        :LC_CTYPE=zh_CN.GB2312:\
+        :charset=GB2312:   )     
+
+3. ee .xinitrc 
+exec scim -d &
+exec fcitx &
+4. 到/～/.config/下建立mkdir autostart
+5. 执行 cp /usr/local/share/applications/fcitx.desktop /root/.config/autostart/
+#普通用户
+启动fcitx
+开机启动项中增加命令fcitx
+
+#配置csh自动补全
+ee /etc/csh.cshrc
+set autolist
+#更改servername 服务器地址
+ee /etc/portsnap.conf
+SERVERNAME=portsnap.cn.freebsd.org
+#修改ports源
+(下载更新）portsnap fetch extract  portsnap update
+（升级打补丁）portsnap fetch install
+（升级仓库）freebsd update
+#pors安装软件，卸载，更新
+make install clean 
+make deinstall clean
+make deinstall reinstall clean(升级）
+
+#中文配置（root等级）
+1.
+在/etc/login.conf加入
+chinese:Chinese Users Account:\
+        :charset=GB2312:\
+        :lang=zh_CN.GB2312:\
+        :tc=default:
+2
+＃cap_mkdb /etc/login.conf
+3
+＃pw user mod 用户名(root/CHYOYA) -L chinese
+4查看
+＃pw user show 用户名
+XX:*:1001:1001:chinese:0:0:用户名:/home/用户名目录:/bin/sh
+su －用户名
+$ locale
+LANG=zh_CN.GB2312
+LC_CTYPE="zh_CN.GB2312"
+LC_COLLATE="zh_CN.GB2312"
+LC_TIME="zh_CN.GB2312"
+LC_NUMERIC="zh_CN.GB2312"
+LC_MONETARY="zh_CN.GB2312"
+LC_MESSAGES="zh_CN.GB2312"
+LC_ALL=
+#中文配置（用户等级）
+在用户根目录的.login_conf加入
+me:\
+        :charset=GB2312:\  
+        :lang=zh_CN.GB2312:
+#如果想要在英文界面输入中文和显示中文
+把上面的zh_CN改为en_US.
+cap_mkdb /home/CHYOYA/login_conf
+pw user mod 用户名(root/CHYOYA) -L chinese
+pw user add 用户名 -L chinese
+#改变启动时间
+在ee /boot/loader.conf加入
+autoboot_delay="3"
+
+
+#安装输入法
+#pkg install scim scim-tables 
+
+//ports 安裝 scim-tables 什么输入法都有
+# cd /usr/ports/chinese/scim-tables 还有/usr/ports/textproc/skim
+make install clean; rehash
+
+//配置 scim 方法1
+(# ee .cshrc 或全局变量 /etc/csh.cshrc
+setenv XIM SCIM
+setenv GTK_IM_MODULE scim
+setenv QT_IM_MODULE xim
+setenv XMODIFIERS @im=SCIM
+setenv XIM_PROGRAM xim-daemon
+setenv XIM_ARGS "--daemonize --xim")
+setenv LANG zh_CN.GB2312
+setenv LC_ALL zh_CN.GB2312
+setenv LC_CTYPE zh_CN.GB2312
+#调整
+pkg install scim-bridge,scim-bridge-qt4,scim-table-imengine,scim-input-pad,skim,zh-scim-pinyin，zh-fcitx-scim
+//配置中文
+# ee ~/.xinitrc 
+exec scim -d & 
+exec fcitx &
+
+安装freebsd
+bsdinstall(引导安装）
+bsdconfigure（引导配置网络）
+bsdconfig
+#安装软件
+#安装火狐
+pkg install firefox
+中文化
+cd /usr/ports/www/firfox-i8n&&make BATCH=yes install clean
+add-ons->language->zh-cn enable
+about:config 
+#flash
+pkg install nspluginwrapper
+更新安装 nspluginwrapper -v -a -i
+
+#引导首要安装
+portsnap fetch
+portsnap extract(cd 建立/usr/ports/软件列表，make install clean，编译安装）
+
+freebsd-update fetch
+freebsd-update install（为系统打补丁）
+
+pkg install
+pkg update/upgrade (升级安装软件）
+pkg remove
+pkg autoremove
+
+#缓存太多清理（安装编译）
+pkg update -f
+#安装界面
+#安装xorg(xorg-minimal)
+pkg install xorg
+#配置xorg
+运行Xorg --cofigure
+mv ~/.xorg.conf.new /etc/X11/xorg.conf
+#安装额外的字体
+pkg install wqy-fonts
+ee /etc/X11/xorg.conf
+#增加字体目录
+FontPath     "/usr/local/lib/X11/fonts/wqy/"
+
+
+#gnome3 xfce4
+pkg install gnome3/xfce
+#配置gnome3
+#挂载/proc 文件系统（ee /etc/fstab)
+proc           /proc       procfs  rw  0   0
+#默认启动GDM GNOME服务
+ee /etc/rc.conf
+gdm_enable="YES"
+gnome_enable="YES"
+
+ee .xinitrc (exec /usr/local/bin/gnome-session)
+#配置xfce4
+ee .xinitrc (exec /usr/local/bin/startxfce4)
+#启动界面
+startx  term
+
+startxfce4 xfce4
+#虚拟机安装增强包
+pkg install virtualbox-ose-additions
+或 cd /usr/ports/emulators/virtualbox-ose-additions && make install clean 
+##配置
+ee /etc/rc.conf
+vboxguest_enable=“YES”
+linux_enable="YES"
+hald_enable="YES"
+dbus_enable="YES"
+sendmail_enable"NONE"
+vboxservice_enable=“YES”
+#配置普通用户
+1 主机名不可和普通用户名一样
+adduser
+rmuser
+2 为普通用户增加su特权
+root状态下 ee /etc/group 
+加入wheel-0-root，username
+export LANG=zh_CN.GB2312 (不加#号进入桌面显示为中文界面)
+export LC_LANG=zh_CN.GB2312
+export LC_CTYPE=zh_CN.GB2312
+alias zm='starxfce4'
+输入法调用如上
+#配置~/.profile（方法2）
+export LANG=zh_CN.GB2312
+export LC_CTYPE=zh_CN.GB2312
+export LANGUAGE=zh_CN.GB2312
+export XMODIFIERS='@im=SICM'
+export GTK_IM_MODULE=scim
+export QT_IM_MODULE=scim
+export XIM=scim
+export XIM_PROGRAM=scim
+#配置/home/user-name/.profile
+export LANG=zh_CN.GB2312
+export LC_CTYPE=zh_CN.GB2312
+export LANGUAGE=zh_CN.GB2312
+export XMODIFIERS="@im=SICM"
+export GTK_IM_MODULE=scim
+export QT_IM_MODULE=scim
+export XIM=scim
+export XIM_PROGRAM=scim
+#改变默认的shell
+将sh/bash改为csh
+chsh -s /bin/csh
+将csh改为sh
+chsh -s /usr/local/bin/bash
+#安装新shell
+如cd /usr/local/bin/bash
+make install clean
+
+
